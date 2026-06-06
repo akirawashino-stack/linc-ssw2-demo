@@ -1,0 +1,2166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>日本語会話力診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #1a1a2e;
+    --accent: #6c5ce7;
+    --accent-light: #a29bfe;
+    --success: #00b894;
+    --danger: #ff6b6b;
+    --text-white: #ffffff;
+    --text-dim: rgba(255,255,255,0.7);
+    --text-muted: rgba(255,255,255,0.4);
+    --overlay-dark: rgba(10,8,20,0.55);
+    --box-bg: rgba(12,10,24,0.92);
+    --box-border: rgba(108,92,231,0.35);
+    --name-bg: rgba(108,92,231,0.9);
+  }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #0a0814;
+    color: var(--text-white);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+
+  /* ── 言語トグル（共通） ── */
+  .lang-bar {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding: 12px 24px 0;
+    flex-shrink: 0;
+  }
+  .lang-btn {
+    padding: 6px 16px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lang-btn:first-child { border-radius: 6px 0 0 6px; }
+  .lang-btn:last-child { border-radius: 0 6px 6px 0; }
+  .lang-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ── オンボーディング画面 ── */
+  .onboarding-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 28px;
+  }
+  .ob-card {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: fadeUp 0.3s ease;
+  }
+  .ob-card.active { display: flex; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .ob-icon { font-size: 56px; margin-bottom: 20px; }
+  .ob-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .ob-desc {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.8;
+    max-width: 340px;
+  }
+  .ob-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 28px 0;
+  }
+  .ob-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s;
+  }
+  .ob-dot.active { background: var(--accent-light); width: 24px; border-radius: 4px; }
+  .ob-nav {
+    display: flex;
+    gap: 10px;
+    padding: 0 28px 32px;
+  }
+  .ob-nav button {
+    flex: 1;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ob-skip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-dim);
+  }
+  .btn-ob-next {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+  }
+
+  /* ── スタート画面 ── */
+  .start-hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px 24px 16px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(108,92,231,0.15), transparent 70%);
+  }
+  .start-hero h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 26px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+  .start-hero .sub {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+  }
+  .scene-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .scene-preview-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+  .scene-preview-item .sp-icon { font-size: 24px; margin-bottom: 6px; }
+  .scene-preview-item .sp-name { font-size: 12px; font-weight: 500; }
+  .scene-preview-item .sp-num {
+    font-size: 10px;
+    color: var(--accent-light);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  /* 入力モード（簡素化: PTTデフォルト、VADは折りたたみ） */
+  .mode-section {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+  .mode-default {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mode-default-label { font-size: 13px; color: var(--text-dim); }
+  .mode-advanced-toggle {
+    background: none; border: none;
+    color: var(--accent-light); font-size: 11px;
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    padding: 4px 0;
+  }
+  .mode-advanced { display: none; margin-top: 10px; }
+  .mode-advanced.show { display: block; }
+  .mode-toggle {
+    display: flex;
+    gap: 0;
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 2px;
+    margin-bottom: 6px;
+  }
+  .mode-toggle button {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+  .mode-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .mode-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .btn-start {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-start:hover { background: #5a4ed4; }
+  .btn-start:active { transform: scale(0.98); }
+
+  .start-footer {
+    text-align: center;
+    padding: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ── チュートリアル画面 ── */
+  .tutorial-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 28px;
+    text-align: center;
+  }
+  .tut-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .tut-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+    line-height: 1.7;
+  }
+  .mic-visualizer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 60px;
+    margin-bottom: 24px;
+  }
+  .mic-bar {
+    width: 6px;
+    background: var(--accent);
+    border-radius: 3px;
+    height: 8px;
+    transition: height 0.08s ease;
+  }
+  .tut-status {
+    font-size: 14px;
+    color: var(--accent-light);
+    margin-bottom: 20px;
+    min-height: 24px;
+  }
+  .btn-tut {
+    padding: 14px 40px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    border: none;
+    color: #fff;
+    background: var(--accent);
+    transition: all 0.2s;
+  }
+  .btn-tut:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-tut-skip {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* ── プログレスバー ── */
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    background: rgba(0,0,0,0.3);
+  }
+  .progress-steps {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+  .step {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.35);
+    background: transparent;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+  .step.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .step.active { background: #fff; border-color: #fff; color: var(--primary); }
+  .step-line { flex: 1; height: 1px; background: rgba(255,255,255,0.12); transition: background 0.3s; }
+  .step-line.done { background: var(--accent); }
+  .btn-quit {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    margin-left: 10px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .btn-quit:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ターン進捗 */
+  .turn-indicator {
+    text-align: center;
+    padding: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    background: rgba(0,0,0,0.15);
+  }
+
+  /* 時間目安 */
+  .time-est {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 4px;
+  }
+
+  /* ── 場面背景 ── */
+  .scene-bg {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(108,92,231,0.15), rgba(26,26,46,0.8));
+  }
+  .scene-bg img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.5s ease;
+  }
+  .scene-bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(10,8,20,0.15) 0%,
+      rgba(10,8,20,0.1) 40%,
+      rgba(10,8,20,0.75) 75%,
+      rgba(10,8,20,0.95) 100%
+    );
+  }
+  /* キャラクター立ち絵 */
+  .scene-char {
+    position: absolute;
+    bottom: 0;
+    right: 10px;
+    z-index: 1;
+    height: 85%;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 12px rgba(0,0,0,0.5));
+    transition: opacity 0.4s ease;
+  }
+
+  .scene-meta {
+    position: absolute;
+    top: 14px; left: 16px;
+    z-index: 2;
+  }
+  .scene-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--accent-light);
+    background: rgba(10,8,20,0.6);
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 5px;
+    border: 1px solid rgba(108,92,231,0.4);
+  }
+  .scene-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+  }
+  .scene-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  }
+
+  /* ── ノベルボックス ── */
+  .novel-box {
+    background: var(--box-bg);
+    border-top: 1px solid var(--box-border);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .situation {
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  .sit-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent-light);
+    margin-bottom: 3px;
+  }
+  .sit-text {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    line-height: 1.75;
+  }
+
+  .chat-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  .speech-item { display: flex; flex-direction: column; }
+  .speech-item.ai { align-items: flex-start; }
+  .speech-item.user { align-items: flex-end; }
+
+  .name-plate {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--name-bg);
+    padding: 3px 10px 3px 8px;
+    border-radius: 5px 5px 0 0;
+    margin-bottom: -1px;
+    position: relative;
+    z-index: 1;
+  }
+  .name-plate .avatar { font-size: 14px; width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+  .name-plate .avatar-emoji { font-size: 14px; }
+  .name-plate .char-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .speech-bubble {
+    max-width: 92%;
+    border: 1px solid rgba(108,92,231,0.3);
+    border-radius: 0 8px 8px 8px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.05);
+  }
+  .speech-bubble .text {
+    font-size: 14px;
+    color: #fff;
+    line-height: 1.8;
+    font-family: 'Noto Serif JP', serif;
+  }
+
+  .speech-item.user .speech-bubble {
+    border-radius: 8px 0 8px 8px;
+    background: rgba(108,92,231,0.15);
+    border-color: rgba(108,92,231,0.4);
+  }
+  .user-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent-light);
+    margin-bottom: 3px;
+    text-align: right;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 2px; height: 14px;
+    background: var(--accent-light);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ── アクションエリア ── */
+  .action-area {
+    padding: 10px 18px 14px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .voice-status {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .voice-status .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-light);
+  }
+  .voice-status .dot.listening { background: var(--success); animation: pulse-dot 1.2s infinite; }
+  .voice-status .dot.speaking { background: var(--accent-light); animation: pulse-dot 0.8s infinite; }
+  .voice-status .dot.recording { background: var(--danger); animation: pulse-dot 0.6s infinite; }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.4); }
+  }
+
+  .ptt-btn {
+    display: none;
+    width: 100%;
+    max-width: 220px;
+    padding: 12px 16px;
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    background: rgba(108,92,231,0.1);
+    color: var(--accent-light);
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .ptt-btn.show { display: block; }
+  .ptt-btn:active, .ptt-btn.held {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+    transform: scale(1.03);
+  }
+
+  .btn-next {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    display: none;
+    transition: background 0.2s;
+  }
+  .btn-next:hover { background: #5a4ed4; }
+
+  .action-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* ── 場面遷移演出 ── */
+  .scene-transition {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,8,20,0.95);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
+  }
+  .scene-transition.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .st-check { font-size: 40px; animation: popIn 0.4s ease; }
+  @keyframes popIn { from { transform: scale(0); } 60% { transform: scale(1.2); } to { transform: scale(1); } }
+  .st-text { font-size: 16px; color: var(--success); font-weight: 600; }
+  .st-next { font-size: 13px; color: var(--text-dim); }
+
+  /* ── 評価中画面（拡張） ── */
+  .evaluating {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    background: radial-gradient(ellipse at 50% 40%, rgba(108,92,231,0.1), transparent 70%);
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .evaluating .text {
+    font-size: 15px;
+    color: var(--text-dim);
+    font-family: 'Noto Serif JP', serif;
+  }
+  .evaluating .text-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .eval-steps {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 280px;
+  }
+  .eval-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: color 0.3s;
+  }
+  .eval-step.active { color: var(--accent-light); }
+  .eval-step.done { color: var(--success); }
+  .eval-step-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .eval-step.active .eval-step-dot { border-color: var(--accent-light); }
+  .eval-step.done .eval-step-dot { border-color: var(--success); background: rgba(0,184,148,0.15); }
+
+  /* ── 結果画面（拡張） ── */
+  .results-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px 40px;
+  }
+  .result-hero {
+    text-align: center;
+    padding: 28px 0;
+    margin-bottom: 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .result-rank-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--accent-light);
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+  .result-score {
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--accent-light);
+    line-height: 1;
+  }
+  .result-label { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+  .result-jlpt {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--success);
+    background: rgba(0,184,148,0.1);
+    padding: 4px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,184,148,0.3);
+    animation: fadeUp 0.5s ease 0.4s both;
+  }
+
+  .result-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .result-card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-light);
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .scene-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .scene-result:last-child { border-bottom: none; }
+  .scene-result .name { font-size: 13px; color: var(--text-dim); }
+  .scene-result .score { font-size: 17px; font-weight: 700; color: var(--accent-light); }
+
+  .axis-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .axis-bar .label { width: 44px; font-size: 11px; color: var(--text-dim); text-align: right; }
+  .axis-bar .bar { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .axis-bar .fill { height: 100%; border-radius: 3px; background: var(--accent); width: 0; transition: width 1s ease 0.3s; }
+  .axis-bar .val { width: 24px; font-size: 11px; font-weight: 700; color: var(--text-dim); }
+
+  .comment-box {
+    background: rgba(108,92,231,0.08);
+    border: 1px solid rgba(108,92,231,0.2);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+
+  /* シェア・登録セクション */
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn-share {
+    width: 100%;
+    padding: 14px;
+    background: var(--success);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-register {
+    width: 100%;
+    padding: 14px;
+    background: rgba(108,92,231,0.15);
+    border: 1px solid rgba(108,92,231,0.3);
+    color: var(--accent-light);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+  }
+  .btn-retry {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+  }
+  .share-toast {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    left: 50%; transform: translateX(-50%);
+    background: var(--success);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 200;
+    animation: fadeUp 0.3s ease;
+  }
+  .share-toast.show { display: block; }
+
+  /* ── エラーモーダル ── */
+  .error-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,8,20,0.9);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+  }
+  .error-overlay.show { display: flex; }
+  .error-box {
+    background: rgba(30,28,50,0.98);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-align: center;
+    max-width: 340px;
+    width: 100%;
+  }
+  .error-icon { font-size: 36px; margin-bottom: 14px; }
+  .error-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--danger);
+  }
+  .error-msg {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .error-actions { display: flex; flex-direction: column; gap: 8px; }
+  .btn-error-retry {
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .btn-error-quit {
+    padding: 10px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-dim);
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  /* ── 中断確認モーダル ── */
+  .quit-confirm {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,8,20,0.9);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+  }
+  .quit-confirm.show { display: flex; }
+
+  /* ── デバッグ（デフォルト非表示） ── */
+  .debug-log {
+    padding: 8px 18px;
+    background: rgba(0,0,0,0.4);
+    font-size: 10px;
+    font-family: monospace;
+    max-height: 100px;
+    overflow-y: auto;
+    color: rgba(255,255,255,0.35);
+    flex-shrink: 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: none;
+  }
+  .debug-log.visible { display: block; }
+
+  .fade-out { opacity: 0 !important; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ===== 画面0: オンボーディング ===== -->
+  <div id="screen-onboarding" class="screen active">
+    <div class="lang-bar">
+      <button class="lang-btn active" onclick="switchLang('ja')">日本語</button>
+      <button class="lang-btn" onclick="switchLang('vi')">Tiếng Việt</button>
+      <button class="lang-btn" onclick="switchLang('zh')">中文</button>
+    </div>
+    <div class="onboarding-wrap">
+      <div class="ob-card active" data-ob="0">
+        <div class="ob-icon">🎤</div>
+        <div class="ob-title" data-t="ob_title_1">AIと日本語で会話するだけ</div>
+        <div class="ob-desc" data-t="ob_desc_1">AIキャラクターが話しかけてくるので、日本語で答えてください。テストではなく、普段の会話力をそのまま見せるだけでOKです。</div>
+      </div>
+      <div class="ob-card" data-ob="1">
+        <div class="ob-icon">🎮</div>
+        <div class="ob-title" data-t="ob_title_2">4つの場面をクリアしよう</div>
+        <div class="ob-desc" data-t="ob_desc_2">自己紹介 → 業務指示 → トラブル報告 → お客様対応。全部で約10分。途中でやめても大丈夫です。</div>
+      </div>
+      <div class="ob-card" data-ob="2">
+        <div class="ob-icon">🎧</div>
+        <div class="ob-title" data-t="ob_title_3">準備するもの</div>
+        <div class="ob-desc" data-t="ob_desc_3">静かな場所で受けてください。イヤホン・ヘッドホンがあるとベストです。マイクの使用を許可してください。</div>
+      </div>
+      <div class="ob-dots">
+        <div class="ob-dot active" data-dot="0"></div>
+        <div class="ob-dot" data-dot="1"></div>
+        <div class="ob-dot" data-dot="2"></div>
+      </div>
+    </div>
+    <div class="ob-nav">
+      <button class="btn-ob-skip" data-t="ob_skip" onclick="showScreen('start')">スキップ</button>
+      <button class="btn-ob-next" data-t="ob_next" onclick="nextOnboarding()">次へ</button>
+    </div>
+  </div>
+
+  <!-- ===== 画面1: スタート ===== -->
+  <div id="screen-start" class="screen">
+    <div class="lang-bar">
+      <button class="lang-btn active" onclick="switchLang('ja')">日本語</button>
+      <button class="lang-btn" onclick="switchLang('vi')">Tiếng Việt</button>
+      <button class="lang-btn" onclick="switchLang('zh')">中文</button>
+    </div>
+    <div class="start-hero">
+      <h1 data-t="start_title">日本語会話力診断</h1>
+      <p class="sub" data-t="start_sub">AIと日本語で会話して、あなたの力を測ろう<br>4つの場面 × 約10分</p>
+
+      <div class="scene-preview">
+        <div class="scene-preview-item">
+          <div class="sp-num">SCENE 01</div>
+          <div class="sp-icon">👤</div>
+          <div class="sp-name" data-t="scene1_name">自己紹介</div>
+        </div>
+        <div class="scene-preview-item">
+          <div class="sp-num">SCENE 02</div>
+          <div class="sp-icon">📋</div>
+          <div class="sp-name" data-t="scene2_name">業務指示</div>
+        </div>
+        <div class="scene-preview-item">
+          <div class="sp-num">SCENE 03</div>
+          <div class="sp-icon">⚠️</div>
+          <div class="sp-name" data-t="scene3_name">トラブル報告</div>
+        </div>
+        <div class="scene-preview-item">
+          <div class="sp-num">SCENE 04</div>
+          <div class="sp-icon">🤝</div>
+          <div class="sp-name" data-t="scene4_name">お客様対応</div>
+        </div>
+      </div>
+
+      <div class="mode-section">
+        <div class="mode-default">
+          <span class="mode-default-label" data-t="mode_label">🎤 ボタンを押して話す（おすすめ）</span>
+          <button class="mode-advanced-toggle" onclick="toggleAdvancedMode()" data-t="mode_change">変更</button>
+        </div>
+        <div class="mode-advanced" id="mode-advanced">
+          <div class="mode-toggle" id="mode-toggle">
+            <button class="active" onclick="setMode('push-to-talk',this)" data-t="mode_ptt">🎤 ボタンで話す</button>
+            <button onclick="setMode('vad',this)" data-t="mode_vad">🔊 自動で聞き取る</button>
+          </div>
+          <div class="mode-hint" data-t="mode_hint">
+            <strong>ボタンで話す:</strong> 押している間だけ録音<br>
+            <strong>自動で聞き取る:</strong> 声を出すと自動で録音（静かな場所で）
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-start" onclick="beginAssessment()" data-t="btn_start">
+        🎤 診断をはじめる
+      </button>
+    </div>
+    <div class="start-footer">Phase 1 プロトタイプ ・ 飲食業</div>
+  </div>
+
+  <!-- ===== 画面1.5: チュートリアル ===== -->
+  <div id="screen-tutorial" class="screen">
+    <div class="tutorial-wrap">
+      <div class="tut-title" data-t="tut_title">マイクのテスト</div>
+      <div class="tut-desc" data-t="tut_desc">まず、マイクが正しく動くか確認しましょう。<br>下のボタンを押して、何か話してみてください。</div>
+      <div class="mic-visualizer" id="mic-viz">
+        <div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div>
+        <div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div>
+        <div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div>
+        <div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div>
+      </div>
+      <div class="tut-status" id="tut-status" data-t="tut_status_ready">ボタンを押してマイクをテスト</div>
+      <button class="btn-tut" id="btn-tut-start" onclick="startMicTest()" data-t="tut_btn_test">🎤 マイクをテスト</button>
+      <button class="btn-tut" id="btn-tut-ok" onclick="startAssessment()" style="display:none" data-t="tut_btn_start">準備OK！診断をはじめる</button>
+      <button class="btn-tut-skip" onclick="startAssessment()" data-t="tut_skip">スキップして始める</button>
+    </div>
+  </div>
+
+  <!-- ===== 画面2: 会話中 ===== -->
+  <div id="screen-conversation" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-steps" id="progress-bar"></div>
+      <button class="btn-quit" onclick="confirmQuit()" data-t="btn_quit">中断</button>
+    </div>
+    <div class="turn-indicator" id="turn-indicator"></div>
+
+    <div class="scene-bg">
+      <img id="bg-img" src="" alt="場面背景">
+      <img id="char-img" class="scene-char" src="" alt="キャラクター">
+      <div class="scene-meta">
+        <div class="scene-num" id="scene-num"></div>
+        <div class="scene-title" id="scene-title"></div>
+        <div class="scene-sub" id="scene-sub"></div>
+      </div>
+    </div>
+
+    <div class="novel-box">
+      <div class="situation">
+        <div class="sit-label">◆ 状況</div>
+        <div class="sit-text" id="sit-text"></div>
+      </div>
+
+      <div class="chat-log" id="chat-log"></div>
+
+      <div class="action-area">
+        <div class="voice-status" id="voice-status">
+          <span class="dot" id="status-dot"></span>
+          <span id="status-text" data-t="status_connecting">接続中...</span>
+        </div>
+        <button class="ptt-btn" id="ptt-btn"
+                onmousedown="pttStart()" onmouseup="pttEnd()" onmouseleave="pttEnd()"
+                ontouchstart="pttStart()" ontouchend="pttEnd()" ontouchcancel="pttEnd()"
+                data-t="ptt_label">🎤 押しながら話す</button>
+        <button class="btn-next" id="btn-next-scene" onclick="nextScene()">次の場面へ →</button>
+        <div class="action-hint" id="action-hint" data-t="action_hint">マイクに向かって日本語で話してください</div>
+      </div>
+    </div>
+
+    <div class="debug-log" id="debug-log"></div>
+  </div>
+
+  <!-- ===== 画面3: 評価中 ===== -->
+  <div id="screen-evaluating" class="screen">
+    <div class="evaluating">
+      <div class="spinner"></div>
+      <div class="text" data-t="eval_text">AIが会話を分析しています…</div>
+      <div class="text-sub" data-t="eval_sub">20〜30秒ほどお待ちください</div>
+      <div class="eval-steps" id="eval-steps">
+        <div class="eval-step active" data-eval-step="0">
+          <div class="eval-step-dot">1</div>
+          <span data-t="eval_step_1">会話ログを整理中…</span>
+        </div>
+        <div class="eval-step" data-eval-step="1">
+          <div class="eval-step-dot">2</div>
+          <span data-t="eval_step_2">語彙・文法を分析中…</span>
+        </div>
+        <div class="eval-step" data-eval-step="2">
+          <div class="eval-step-dot">3</div>
+          <span data-t="eval_step_3">場面対応力を評価中…</span>
+        </div>
+        <div class="eval-step" data-eval-step="3">
+          <div class="eval-step-dot">4</div>
+          <span data-t="eval_step_4">総合スコアを算出中…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 画面4: 結果 ===== -->
+  <div id="screen-results" class="screen">
+    <div class="results-wrap">
+      <div class="result-hero">
+        <div class="result-rank-title" id="result-rank-title"></div>
+        <div class="result-score" id="result-score"></div>
+        <div class="result-label" data-t="result_label">総合スコア</div>
+        <div class="result-jlpt" id="result-jlpt"></div>
+      </div>
+      <div class="result-card">
+        <h3 data-t="result_scene_title">場面別スコア</h3>
+        <div id="scene-results"></div>
+      </div>
+      <div class="result-card">
+        <h3 data-t="result_axis_title">能力レーダー</h3>
+        <div id="axis-bars"></div>
+      </div>
+      <div class="result-card">
+        <h3 data-t="result_comment_title">総合コメント</h3>
+        <div class="comment-box" id="result-comment"></div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-share" onclick="shareResult()" data-t="btn_share">📤 結果をシェアする</button>
+        <button class="btn-register" onclick="showRegister()" data-t="btn_register">📩 詳しい結果を受け取る</button>
+        <button class="btn-retry" onclick="location.reload()" data-t="btn_retry">もう一度診断する</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 場面遷移演出 -->
+<div class="scene-transition" id="scene-transition">
+  <div class="st-check">✅</div>
+  <div class="st-text" id="st-text"></div>
+  <div class="st-next" id="st-next"></div>
+</div>
+
+<!-- エラーモーダル -->
+<div class="error-overlay" id="error-overlay">
+  <div class="error-box">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title" id="error-title" data-t="error_title">接続エラー</div>
+    <div class="error-msg" id="error-msg" data-t="error_msg">マイクの接続を確認してください。</div>
+    <div class="error-actions">
+      <button class="btn-error-retry" onclick="retryConnection()" data-t="error_retry">再接続する</button>
+      <button class="btn-error-quit" onclick="quitAssessment()" data-t="error_quit">診断を終了する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 中断確認モーダル -->
+<div class="quit-confirm" id="quit-confirm">
+  <div class="error-box">
+    <div class="error-icon">🚪</div>
+    <div class="error-title" style="color:var(--text-white)" data-t="quit_title">診断を中断しますか？</div>
+    <div class="error-msg" data-t="quit_msg">途中でやめても、ここまでのデータは保存されません。</div>
+    <div class="error-actions">
+      <button class="btn-error-retry" onclick="closeQuitConfirm()" data-t="quit_continue">続ける</button>
+      <button class="btn-error-quit" onclick="quitAssessment()" data-t="quit_exit">中断する</button>
+    </div>
+  </div>
+</div>
+
+<!-- シェアトースト -->
+<div class="share-toast" id="share-toast" data-t="share_copied">リンクをコピーしました！</div>
+
+<script>
+// ===================================================
+// i18n — UI テキスト（日本語 / ベトナム語 / 中国語）
+// ===================================================
+let currentLang = "ja";
+const I18N = {
+  ja: {
+    ob_title_1: "AIと日本語で会話するだけ",
+    ob_desc_1: "AIキャラクターが話しかけてくるので、日本語で答えてください。テストではなく、普段の会話力をそのまま見せるだけでOKです。",
+    ob_title_2: "4つの場面をクリアしよう",
+    ob_desc_2: "自己紹介 → 業務指示 → トラブル報告 → お客様対応。全部で約10分。途中でやめても大丈夫です。",
+    ob_title_3: "準備するもの",
+    ob_desc_3: "静かな場所で受けてください。イヤホン・ヘッドホンがあるとベストです。マイクの使用を許可してください。",
+    ob_skip: "スキップ", ob_next: "次へ",
+    start_title: "日本語会話力診断",
+    start_sub: "AIと日本語で会話して、あなたの力を測ろう<br>4つの場面 × 約10分",
+    scene1_name: "自己紹介", scene2_name: "業務指示", scene3_name: "トラブル報告", scene4_name: "お客様対応",
+    mode_label: "🎤 ボタンを押して話す（おすすめ）", mode_change: "変更",
+    mode_ptt: "🎤 ボタンで話す", mode_vad: "🔊 自動で聞き取る",
+    mode_hint: "<strong>ボタンで話す:</strong> 押している間だけ録音<br><strong>自動で聞き取る:</strong> 声を出すと自動で録音（静かな場所で）",
+    btn_start: "🎤 診断をはじめる",
+    tut_title: "マイクのテスト", tut_desc: "まず、マイクが正しく動くか確認しましょう。<br>下のボタンを押して、何か話してみてください。",
+    tut_status_ready: "ボタンを押してマイクをテスト",
+    tut_status_listening: "🎤 聞いています… 何か話してみてください",
+    tut_status_ok: "✅ マイクは正常です！",
+    tut_status_fail: "❌ マイクが検出できません。設定を確認してください。",
+    tut_btn_test: "🎤 マイクをテスト", tut_btn_start: "準備OK！診断をはじめる", tut_skip: "スキップして始める",
+    btn_quit: "中断",
+    status_connecting: "接続中...",
+    ptt_label: "🎤 押しながら話す", ptt_recording: "🔴 録音中…",
+    action_hint: "マイクに向かって日本語で話してください",
+    action_hint_ptt: "ボタンを長押ししながら日本語で話してください",
+    status_ptt_ready: "ボタンを押して話してください",
+    status_vad_ready: "話してください",
+    status_ai_speaking: "AIが話しています…",
+    status_recording: "録音中…",
+    turn_format: "ターン {current} / {max}",
+    scene_complete: "場面終了",
+    btn_next_scene: "次の場面へ →", btn_see_result: "結果を見る 🏆",
+    eval_text: "AIが会話を分析しています…", eval_sub: "20〜30秒ほどお待ちください",
+    eval_step_1: "会話ログを整理中…", eval_step_2: "語彙・文法を分析中…",
+    eval_step_3: "場面対応力を評価中…", eval_step_4: "総合スコアを算出中…",
+    result_label: "総合スコア",
+    result_scene_title: "場面別スコア", result_axis_title: "能力レーダー", result_comment_title: "総合コメント",
+    btn_share: "📤 結果をシェアする", btn_register: "📩 詳しい結果を受け取る", btn_retry: "もう一度診断する",
+    share_copied: "リンクをコピーしました！",
+    error_title: "接続エラー", error_msg: "マイクの接続を確認してください。",
+    error_retry: "再接続する", error_quit: "診断を終了する",
+    quit_title: "診断を中断しますか？", quit_msg: "途中でやめても、ここまでのデータは保存されません。",
+    quit_continue: "続ける", quit_exit: "中断する",
+    transition_done: "{scene} クリア！", transition_next: "次: {next}",
+    est_time: "残り約{min}分",
+  },
+  vi: {
+    ob_title_1: "Chỉ cần nói chuyện tiếng Nhật với AI",
+    ob_desc_1: "Nhân vật AI sẽ nói chuyện với bạn, hãy trả lời bằng tiếng Nhật. Không phải bài kiểm tra, chỉ cần thể hiện khả năng hội thoại bình thường của bạn.",
+    ob_title_2: "Vượt qua 4 tình huống",
+    ob_desc_2: "Tự giới thiệu → Chỉ thị công việc → Báo cáo sự cố → Phục vụ khách hàng. Tổng cộng khoảng 10 phút. Bạn có thể dừng giữa chừng.",
+    ob_title_3: "Chuẩn bị",
+    ob_desc_3: "Hãy ở nơi yên tĩnh. Tốt nhất nên dùng tai nghe. Hãy cho phép sử dụng micro.",
+    ob_skip: "Bỏ qua", ob_next: "Tiếp theo",
+    start_title: "Kiểm tra hội thoại tiếng Nhật",
+    start_sub: "Nói chuyện tiếng Nhật với AI để đo năng lực của bạn<br>4 tình huống × khoảng 10 phút",
+    scene1_name: "Tự giới thiệu", scene2_name: "Chỉ thị công việc", scene3_name: "Báo cáo sự cố", scene4_name: "Phục vụ khách hàng",
+    mode_label: "🎤 Nhấn nút để nói (khuyên dùng)", mode_change: "Thay đổi",
+    mode_ptt: "🎤 Nhấn để nói", mode_vad: "🔊 Tự động nhận giọng",
+    mode_hint: "<strong>Nhấn để nói:</strong> Chỉ ghi âm khi nhấn<br><strong>Tự động:</strong> Tự động ghi âm khi bạn nói (ở nơi yên tĩnh)",
+    btn_start: "🎤 Bắt đầu kiểm tra",
+    tut_title: "Kiểm tra micro", tut_desc: "Hãy kiểm tra xem micro có hoạt động không.<br>Nhấn nút bên dưới và thử nói gì đó.",
+    tut_status_ready: "Nhấn nút để kiểm tra micro",
+    tut_status_listening: "🎤 Đang nghe… Hãy thử nói gì đó",
+    tut_status_ok: "✅ Micro hoạt động bình thường!",
+    tut_status_fail: "❌ Không phát hiện micro. Hãy kiểm tra cài đặt.",
+    tut_btn_test: "🎤 Kiểm tra micro", tut_btn_start: "Sẵn sàng! Bắt đầu", tut_skip: "Bỏ qua và bắt đầu",
+    btn_quit: "Dừng",
+    status_connecting: "Đang kết nối...",
+    ptt_label: "🎤 Nhấn giữ để nói", ptt_recording: "🔴 Đang ghi âm…",
+    action_hint: "Hãy nói tiếng Nhật vào micro",
+    action_hint_ptt: "Nhấn giữ nút và nói tiếng Nhật",
+    status_ptt_ready: "Nhấn nút để nói",
+    status_vad_ready: "Hãy nói",
+    status_ai_speaking: "AI đang nói…",
+    status_recording: "Đang ghi âm…",
+    turn_format: "Lượt {current} / {max}",
+    scene_complete: "Hoàn thành tình huống",
+    btn_next_scene: "Tình huống tiếp →", btn_see_result: "Xem kết quả 🏆",
+    eval_text: "AI đang phân tích cuộc hội thoại…", eval_sub: "Vui lòng đợi 20-30 giây",
+    eval_step_1: "Đang sắp xếp hội thoại…", eval_step_2: "Đang phân tích từ vựng & ngữ pháp…",
+    eval_step_3: "Đang đánh giá khả năng ứng xử…", eval_step_4: "Đang tính điểm tổng hợp…",
+    result_label: "Điểm tổng hợp",
+    result_scene_title: "Điểm theo tình huống", result_axis_title: "Biểu đồ năng lực", result_comment_title: "Nhận xét tổng hợp",
+    btn_share: "📤 Chia sẻ kết quả", btn_register: "📩 Nhận kết quả chi tiết", btn_retry: "Kiểm tra lại",
+    share_copied: "Đã sao chép liên kết!",
+    error_title: "Lỗi kết nối", error_msg: "Hãy kiểm tra kết nối micro.",
+    error_retry: "Kết nối lại", error_quit: "Kết thúc",
+    quit_title: "Dừng kiểm tra?", quit_msg: "Dữ liệu đến thời điểm này sẽ không được lưu.",
+    quit_continue: "Tiếp tục", quit_exit: "Dừng",
+    transition_done: "{scene} hoàn thành!", transition_next: "Tiếp theo: {next}",
+    est_time: "Còn khoảng {min} phút",
+  },
+  zh: {
+    ob_title_1: "只需要和AI用日语对话",
+    ob_desc_1: "AI角色会跟你说话，请用日语回答。这不是考试，只需展示你平时的会话能力。",
+    ob_title_2: "通过4个场景",
+    ob_desc_2: "自我介绍 → 工作指示 → 故障报告 → 接待客人。共约10分钟。中途可以退出。",
+    ob_title_3: "需要准备的",
+    ob_desc_3: "请在安静的地方进行。建议使用耳机。请允许使用麦克风。",
+    ob_skip: "跳过", ob_next: "下一步",
+    start_title: "日语会话能力诊断",
+    start_sub: "和AI用日语对话，测试你的能力<br>4个场景 × 约10分钟",
+    scene1_name: "自我介绍", scene2_name: "工作指示", scene3_name: "故障报告", scene4_name: "接待客人",
+    mode_label: "🎤 按住按钮说话（推荐）", mode_change: "更改",
+    mode_ptt: "🎤 按住说话", mode_vad: "🔊 自动识别",
+    mode_hint: "<strong>按住说话:</strong> 按住时才录音<br><strong>自动识别:</strong> 检测到声音自动录音（需安静环境）",
+    btn_start: "🎤 开始诊断",
+    tut_title: "麦克风测试", tut_desc: "先确认麦克风是否正常。<br>按下按钮，试着说点什么。",
+    tut_status_ready: "按下按钮测试麦克风",
+    tut_status_listening: "🎤 正在听… 请试着说点什么",
+    tut_status_ok: "✅ 麦克风正常！",
+    tut_status_fail: "❌ 未检测到麦克风。请检查设置。",
+    tut_btn_test: "🎤 测试麦克风", tut_btn_start: "准备好了！开始诊断", tut_skip: "跳过直接开始",
+    btn_quit: "中断",
+    status_connecting: "连接中...",
+    ptt_label: "🎤 按住说话", ptt_recording: "🔴 录音中…",
+    action_hint: "请对着麦克风说日语",
+    action_hint_ptt: "请长按按钮用日语说话",
+    status_ptt_ready: "请按下按钮说话",
+    status_vad_ready: "请说话",
+    status_ai_speaking: "AI正在说话…",
+    status_recording: "录音中…",
+    turn_format: "轮次 {current} / {max}",
+    scene_complete: "场景结束",
+    btn_next_scene: "下一个场景 →", btn_see_result: "查看结果 🏆",
+    eval_text: "AI正在分析对话…", eval_sub: "请等待20-30秒",
+    eval_step_1: "整理对话记录…", eval_step_2: "分析词汇和语法…",
+    eval_step_3: "评估场景应对能力…", eval_step_4: "计算综合分数…",
+    result_label: "综合得分",
+    result_scene_title: "分场景得分", result_axis_title: "能力雷达", result_comment_title: "综合评语",
+    btn_share: "📤 分享结果", btn_register: "📩 获取详细结果", btn_retry: "再测一次",
+    share_copied: "已复制链接！",
+    error_title: "连接错误", error_msg: "请检查麦克风连接。",
+    error_retry: "重新连接", error_quit: "结束诊断",
+    quit_title: "要中断诊断吗？", quit_msg: "目前的数据将不会保存。",
+    quit_continue: "继续", quit_exit: "中断",
+    transition_done: "{scene} 通过！", transition_next: "下一个: {next}",
+    est_time: "还剩约{min}分钟",
+  }
+};
+
+function t(key, params) {
+  let s = (I18N[currentLang] && I18N[currentLang][key]) || (I18N.ja[key]) || key;
+  if (params) { for (const [k,v] of Object.entries(params)) { s = s.replace(`{${k}}`, v); } }
+  return s;
+}
+
+function switchLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll(".lang-btn").forEach(b => {
+    b.classList.toggle("active", b.textContent.trim() === ({ja:"日本語",vi:"Tiếng Việt",zh:"中文"})[lang]);
+  });
+  document.querySelectorAll("[data-t]").forEach(el => {
+    const key = el.getAttribute("data-t");
+    const translated = t(key);
+    if (el.tagName === "INPUT") { el.value = translated; }
+    else { el.innerHTML = translated; }
+  });
+}
+
+// ===================================================
+// オンボーディング
+// ===================================================
+let obStep = 0;
+function nextOnboarding() {
+  obStep++;
+  if (obStep >= 3) { showScreen("start"); return; }
+  document.querySelectorAll(".ob-card").forEach(c => c.classList.remove("active"));
+  document.querySelectorAll(".ob-dot").forEach(d => d.classList.remove("active"));
+  document.querySelector(`.ob-card[data-ob="${obStep}"]`).classList.add("active");
+  document.querySelector(`.ob-dot[data-dot="${obStep}"]`).classList.add("active");
+}
+
+// ===================================================
+// チュートリアル（マイクテスト）
+// ===================================================
+let tutStream = null;
+let tutAnalyser = null;
+let tutAnimFrame = null;
+
+async function startMicTest() {
+  const statusEl = document.getElementById("tut-status");
+  try {
+    tutStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(tutStream);
+    tutAnalyser = ctx.createAnalyser();
+    tutAnalyser.fftSize = 256;
+    source.connect(tutAnalyser);
+
+    statusEl.innerHTML = t("tut_status_listening");
+    document.getElementById("btn-tut-start").style.display = "none";
+
+    const bars = document.querySelectorAll("#mic-viz .mic-bar");
+    const data = new Uint8Array(tutAnalyser.frequencyBinCount);
+    let hadSound = false;
+
+    function animate() {
+      tutAnalyser.getByteFrequencyData(data);
+      const avg = data.reduce((a,b) => a+b, 0) / data.length;
+      if (avg > 15) hadSound = true;
+      bars.forEach((bar, i) => {
+        const val = data[Math.floor(i * data.length / bars.length)] || 0;
+        bar.style.height = Math.max(4, val / 4) + "px";
+        bar.style.background = avg > 15 ? "var(--success)" : "var(--accent)";
+      });
+      tutAnimFrame = requestAnimationFrame(animate);
+    }
+    animate();
+
+    setTimeout(() => {
+      cancelAnimationFrame(tutAnimFrame);
+      tutStream.getTracks().forEach(t => t.stop());
+      bars.forEach(bar => { bar.style.height = "8px"; bar.style.background = "var(--accent)"; });
+      if (hadSound) {
+        statusEl.innerHTML = t("tut_status_ok");
+        document.getElementById("btn-tut-ok").style.display = "inline-block";
+      } else {
+        statusEl.innerHTML = t("tut_status_fail");
+        document.getElementById("btn-tut-start").style.display = "inline-block";
+        document.getElementById("btn-tut-start").innerHTML = t("tut_btn_test");
+      }
+    }, 3000);
+
+  } catch (err) {
+    statusEl.innerHTML = t("tut_status_fail");
+  }
+}
+
+// ===================================================
+// モード切替（簡素化）
+// ===================================================
+function toggleAdvancedMode() {
+  document.getElementById("mode-advanced").classList.toggle("show");
+}
+
+// ===================================================
+// 場面ごとのビジュアルデータ（PROMPT_DESIGN v2準拠）
+// ===================================================
+const SCENE_VISUAL = {
+  scene1_self_intro: {
+    num: "SCENE 01 / 04",
+    title: "自己紹介",
+    sub: "面接官と話そう",
+    img: "./npc_characters/bg_scene01_interview_room.png",
+    fallbackGrad: "linear-gradient(135deg, #1a2a4a, #2d1a4a)",
+    sit: "今日は採用面接の日。会議室に入ると、採用担当の山田さんが待っていました。",
+    avatar: "./npc_characters/scene01_interviewer_smile.png",
+    charImg: "./npc_characters/scene01_interviewer_smile.png",
+    charExpressions: {
+      default: "./npc_characters/scene01_interviewer_smile.png",
+      listening: "./npc_characters/scene01_interviewer_listening.png",
+      impressed: "./npc_characters/scene01_interviewer_impressed.png",
+      thinking: "./npc_characters/scene01_interviewer_thinking.png",
+    },
+    charName: "山田 誠",
+    charRole: "採用担当マネージャー",
+  },
+  scene2_instruction: {
+    num: "SCENE 02 / 04",
+    title: "業務指示の理解",
+    sub: "店長の話をしっかり聞こう",
+    img: "./npc_characters/bg_scene02_kitchen.png",
+    fallbackGrad: "linear-gradient(135deg, #2a1a0a, #4a2a1a)",
+    sit: "レストランのホールで準備をしていると、田中店長が近づいてきました。今日のランチについて、何か話があるようです。",
+    avatar: "./npc_characters/scene02_manager_calm.png",
+    charImg: "./npc_characters/scene02_manager_calm.png",
+    charExpressions: {
+      default: "./npc_characters/scene02_manager_calm.png",
+      explaining: "./npc_characters/scene02_manager_explaining.png",
+      approval: "./npc_characters/scene02_manager_approval.png",
+      serious: "./npc_characters/scene02_manager_serious.png",
+    },
+    charName: "田中 裕太",
+    charRole: "レストラン店長",
+  },
+  scene3_trouble: {
+    num: "SCENE 03 / 04",
+    title: "トラブル報告",
+    sub: "落ち着いて、正確に報告しよう",
+    img: "./npc_characters/bg_scene03_counter.png",
+    fallbackGrad: "linear-gradient(135deg, #1a1a2e, #2e1a2e)",
+    sit: "ランチの営業中、ミスが起きてしまいました。先輩の佐藤さんに報告しなければなりません。",
+    avatar: "./npc_characters/scene03_senior_neutral.png",
+    charImg: "./npc_characters/scene03_senior_neutral.png",
+    charExpressions: {
+      default: "./npc_characters/scene03_senior_neutral.png",
+      concerned: "./npc_characters/scene03_senior_concerned.png",
+      understanding: "./npc_characters/scene03_senior_understanding.png",
+      determined: "./npc_characters/scene03_senior_determined.png",
+    },
+    charName: "佐藤 美咲",
+    charRole: "先輩スタッフ",
+  },
+  scene4_customer: {
+    num: "SCENE 04 / 04",
+    title: "お客様対応",
+    sub: "お客様に丁寧に対応しよう",
+    img: "./npc_characters/bg_scene04_dining.png",
+    fallbackGrad: "linear-gradient(135deg, #2a2a1a, #1a2a2a)",
+    sit: "ランチタイムのホールを担当中。お客様がメニューを見ながら、こちらに声をかけてきました。",
+    avatar: "./npc_characters/scene04_customer_friendly.png",
+    charImg: "./npc_characters/scene04_customer_friendly.png",
+    charExpressions: {
+      default: "./npc_characters/scene04_customer_friendly.png",
+      confused: "./npc_characters/scene04_customer_confused.png",
+      satisfied: "./npc_characters/scene04_customer_satisfied.png",
+      annoyed: "./npc_characters/scene04_customer_annoyed.png",
+    },
+    charName: "お客様",
+    charRole: "30代・会社員",
+  },
+};
+
+// フォールバック背景グラデーション
+const SCENE_FALLBACKS = {};
+for (const [k, v] of Object.entries(SCENE_VISUAL)) {
+  SCENE_FALLBACKS[k] = v.fallbackGrad || "linear-gradient(135deg, rgba(108,92,231,0.15), rgba(26,26,46,0.8))";
+}
+
+// ===================================================
+// Whisperハルシネーション除去フィルタ
+// ===================================================
+const WHISPER_HALLUCINATIONS = [
+  /^ご視聴ありがとうございま(した|す)[。.]?$/,
+  /^ご清聴ありがとうございま(した|す)[。.]?$/,
+  /^チャンネル登録.*お願いします[。.]?$/,
+  /^字幕.*ご覧.*ください[。.]?$/,
+  /^(Thanks|Thank you) for watching[.]?$/i,
+  /^(Please )?Subscribe.*$/i,
+  /^ご視聴.*ありがとう.*$/,
+  /^お疲れ様でした[。.]?$/,
+  /^それでは[、,]?また[。.]?$/,
+  /^\.\.\.$/,
+  /^…$/,
+];
+
+function isWhisperHallucination(text) {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return true;
+  return WHISPER_HALLUCINATIONS.some(pattern => pattern.test(trimmed));
+}
+
+// ===================================================
+// キャラクター表情切り替え
+// ===================================================
+function setCharExpression(sceneKey, expressionKey) {
+  const vis = SCENE_VISUAL[sceneKey];
+  if (!vis || !vis.charExpressions) return;
+  const src = vis.charExpressions[expressionKey] || vis.charExpressions.default;
+  const charImg = document.getElementById("char-img");
+  if (charImg && src) { charImg.src = src; }
+}
+
+// ===================================================
+// 状態管理
+// ===================================================
+let scenes = [];
+let currentSceneIndex = 0;
+let transcripts = {};
+let peerConnection = null;
+let dataChannel = null;
+let audioElement = null;
+let inputMode = "push-to-talk";
+let isPttHeld = false;
+
+function setMode(mode, btn) {
+  inputMode = mode;
+  document.querySelectorAll("#mode-toggle button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + id).classList.add("active");
+}
+
+function debugLog(msg) {
+  const el = document.getElementById("debug-log");
+  if (el) {
+    const time = new Date().toLocaleTimeString("ja-JP");
+    el.innerHTML += `${time} ${msg}\n`;
+    el.scrollTop = el.scrollHeight;
+  }
+  console.log(msg);
+}
+
+// 会話ログに吹き出しを追加
+function addTranscript(sceneKey, role, text) {
+  if (!transcripts[sceneKey]) transcripts[sceneKey] = [];
+  transcripts[sceneKey].push({ role, text });
+
+  const log = document.getElementById("chat-log");
+  const vis = SCENE_VISUAL[sceneKey];
+  const item = document.createElement("div");
+  item.className = `speech-item ${role}`;
+
+  if (role === "ai") {
+    const avatarHtml = vis.avatar.startsWith("./")
+      ? `<img class="avatar" src="${vis.avatar}" alt="${vis.charName}">`
+      : `<span class="avatar-emoji">${vis.avatar}</span>`;
+    item.innerHTML = `
+      <div class="name-plate">
+        ${avatarHtml}
+        <span class="char-name">${vis.charName}</span>
+      </div>
+      <div class="speech-bubble">
+        <div class="text">${text}</div>
+      </div>`;
+  } else {
+    item.innerHTML = `
+      <div class="user-label">あなた</div>
+      <div class="speech-bubble">
+        <div class="text">${text}</div>
+      </div>`;
+  }
+
+  log.appendChild(item);
+  log.scrollTop = log.scrollHeight;
+}
+
+// プログレスバー描画
+function renderProgress(sceneIdx, total) {
+  const el = document.getElementById("progress-bar");
+  el.innerHTML = "";
+  for (let i = 0; i < total; i++) {
+    const s = document.createElement("div");
+    s.className = "step" + (i < sceneIdx ? " done" : i === sceneIdx ? " active" : "");
+    s.textContent = i + 1;
+    el.appendChild(s);
+    if (i < total - 1) {
+      const l = document.createElement("div");
+      l.className = "step-line" + (i < sceneIdx ? " done" : "");
+      el.appendChild(l);
+    }
+  }
+}
+
+// ステータス表示更新
+function setStatus(state, text) {
+  const dot = document.getElementById("status-dot");
+  const txt = document.getElementById("status-text");
+  dot.className = "dot " + state;
+  txt.textContent = text;
+}
+
+// ターン進捗更新
+function updateTurnIndicator(current, max) {
+  const el = document.getElementById("turn-indicator");
+  if (max) {
+    el.textContent = t("turn_format", { current, max });
+    el.style.display = "block";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+// Push-to-talk
+function pttStart() {
+  if (!dataChannel || dataChannel.readyState !== "open") return;
+  isPttHeld = true;
+  document.getElementById("ptt-btn").classList.add("held");
+  document.getElementById("ptt-btn").textContent = t("ptt_recording");
+  setStatus("recording", t("status_recording"));
+  debugLog("[PTT] 録音開始");
+}
+
+function pttEnd() {
+  if (!isPttHeld) return;
+  isPttHeld = false;
+  document.getElementById("ptt-btn").classList.remove("held");
+  document.getElementById("ptt-btn").textContent = t("ptt_label");
+  setStatus("speaking", t("status_ai_speaking"));
+  sendRealtimeEvent({ type: "input_audio_buffer.commit" });
+  sendRealtimeEvent({ type: "response.create", response: { modalities: ["text", "audio"] } });
+  debugLog("[PTT] 録音終了 → コミット");
+}
+
+// ===================================================
+// メインフロー
+// ===================================================
+
+// スタート画面の「診断をはじめる」→ チュートリアルへ
+function beginAssessment() {
+  showScreen("tutorial");
+}
+
+// チュートリアル完了 or スキップ → 本番開始
+async function startAssessment() {
+  // チュートリアルのストリームをクリーンアップ
+  if (tutStream) { tutStream.getTracks().forEach(t => t.stop()); tutStream = null; }
+  if (tutAnimFrame) { cancelAnimationFrame(tutAnimFrame); }
+
+  const res = await fetch("/api/scenes");
+  const data = await res.json();
+  scenes = data.scenes;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+  } catch (err) {
+    showError(t("tut_status_fail"));
+    return;
+  }
+
+  currentSceneIndex = 0;
+  transcripts = {};
+  showScreen("conversation");
+  await startScene();
+}
+
+async function startScene() {
+  const scene = scenes[currentSceneIndex];
+  const vis = SCENE_VISUAL[scene.key];
+  debugLog(`--- ${scene.name} 開始 ---`);
+
+  // ビジュアル更新（画像フォールバック付き）
+  const bgEl = document.querySelector(".scene-bg");
+  const img = document.getElementById("bg-img");
+  const charImg = document.getElementById("char-img");
+  img.classList.add("fade-out");
+  charImg.style.opacity = "0";
+  setTimeout(() => {
+    img.src = vis.img;
+    img.onload = () => { img.classList.remove("fade-out"); bgEl.style.background = ""; };
+    img.onerror = () => {
+      img.classList.remove("fade-out");
+      img.style.display = "none";
+      bgEl.style.background = SCENE_FALLBACKS[scene.key];
+    };
+    // キャラクター立ち絵を設定
+    if (vis.charImg) {
+      charImg.src = vis.charImg;
+      charImg.style.display = "block";
+      charImg.onload = () => { charImg.style.opacity = "1"; };
+      charImg.onerror = () => { charImg.style.display = "none"; };
+    } else {
+      charImg.style.display = "none";
+    }
+  }, 300);
+  img.style.display = "block";
+
+  document.getElementById("scene-num").textContent = vis.num;
+  document.getElementById("scene-title").textContent = vis.title;
+  document.getElementById("scene-sub").textContent = vis.sub;
+  document.getElementById("sit-text").textContent = vis.sit;
+  document.getElementById("chat-log").innerHTML = "";
+  document.getElementById("btn-next-scene").style.display = "none";
+  document.getElementById("debug-log").innerHTML = "";
+
+  const pttBtn = document.getElementById("ptt-btn");
+  pttBtn.classList.toggle("show", inputMode === "push-to-talk");
+
+  renderProgress(currentSceneIndex, scenes.length);
+  updateTurnIndicator(0, scene.maxTurns || 3);
+  setStatus("", t("status_connecting"));
+
+  try {
+    await connectRealtime(scene.key);
+    if (inputMode === "push-to-talk") {
+      setStatus("", t("status_ptt_ready"));
+      document.getElementById("action-hint").textContent = t("action_hint_ptt");
+    } else {
+      setStatus("listening", t("status_vad_ready"));
+      document.getElementById("action-hint").textContent = t("action_hint");
+    }
+  } catch (err) {
+    debugLog(`接続エラー: ${err.message}`);
+    showError(err.message);
+  }
+}
+
+// ===================================================
+// WebRTC接続
+// ===================================================
+async function connectRealtime(sceneKey) {
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+
+  debugLog("エフェメラルトークン取得中...");
+  const tokenRes = await fetch("/api/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sceneKey, mode: inputMode }),
+  });
+
+  if (!tokenRes.ok) {
+    const err = await tokenRes.json();
+    throw new Error(err.error || "セッション作成失敗");
+  }
+
+  const { clientSecret } = await tokenRes.json();
+  debugLog("トークン取得OK");
+
+  peerConnection = new RTCPeerConnection();
+
+  audioElement = document.createElement("audio");
+  audioElement.autoplay = true;
+  peerConnection.ontrack = (event) => {
+    debugLog("リモート音声トラック受信");
+    audioElement.srcObject = event.streams[0];
+  };
+
+  const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+  debugLog("マイク接続OK");
+
+  dataChannel = peerConnection.createDataChannel("oai-events");
+  dataChannel.onopen = () => {
+    debugLog("DataChannel接続OK - 会話開始");
+    sendRealtimeEvent({ type: "response.create", response: { modalities: ["text", "audio"] } });
+  };
+  dataChannel.onmessage = handleRealtimeEvent;
+
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+
+  debugLog("WebRTC接続中...");
+  const sdpRes = await fetch(
+    "https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview",
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${clientSecret}`, "Content-Type": "application/sdp" },
+      body: offer.sdp,
+    }
+  );
+
+  if (!sdpRes.ok) throw new Error(`WebRTC接続失敗: ${sdpRes.status}`);
+
+  const answerSdp = await sdpRes.text();
+  await peerConnection.setRemoteDescription({ type: "answer", sdp: answerSdp });
+  debugLog("WebRTC接続完了");
+}
+
+// ===================================================
+// Realtime APIイベント処理
+// ===================================================
+let currentAiText = "";
+let turnCount = 0;
+
+function sendRealtimeEvent(event) {
+  if (dataChannel && dataChannel.readyState === "open") {
+    dataChannel.send(JSON.stringify(event));
+  }
+}
+
+function handleRealtimeEvent(event) {
+  const data = JSON.parse(event.data);
+  const scene = scenes[currentSceneIndex];
+
+  switch (data.type) {
+    case "response.audio_transcript.delta":
+      currentAiText += data.delta || "";
+      break;
+
+    case "response.audio_transcript.done":
+      if (currentAiText.trim()) {
+        addTranscript(scene.key, "ai", currentAiText.trim());
+        debugLog(`AI: ${currentAiText.trim().substring(0, 60)}...`);
+        turnCount++;
+        updateTurnIndicator(turnCount, scene.maxTurns || 3);
+      }
+      currentAiText = "";
+      if (inputMode === "push-to-talk") {
+        setStatus("", t("status_ptt_ready"));
+      } else {
+        setStatus("listening", t("status_vad_ready"));
+      }
+      // ユーザーの発話待ち: 傾聴表情に切り替え
+      { const sk = scenes[currentSceneIndex]?.key;
+        const listenMap = { scene1_self_intro: "listening", scene2_instruction: "default", scene3_trouble: "neutral", scene4_customer: "default" };
+        setCharExpression(sk, listenMap[sk] || "default"); }
+      break;
+
+    case "conversation.item.input_audio_transcription.completed":
+      const userText = data.transcript || "";
+      if (userText.trim() && !isWhisperHallucination(userText)) {
+        addTranscript(scene.key, "user", userText.trim());
+        debugLog(`User: ${userText.trim().substring(0, 60)}...`);
+      } else if (userText.trim()) {
+        debugLog(`[フィルタ除去] Whisper幻覚: "${userText.trim()}"`);
+      }
+      break;
+
+    case "response.created":
+      setStatus("speaking", t("status_ai_speaking"));
+      // AI発話中の表情: 場面に応じた表情に切り替え
+      { const sk = scenes[currentSceneIndex]?.key;
+        const exprMap = { scene1_self_intro: "thinking", scene2_instruction: "explaining", scene3_trouble: "concerned", scene4_customer: "default" };
+        setCharExpression(sk, exprMap[sk] || "default"); }
+      break;
+
+    case "response.done":
+      if (turnCount >= scene.maxTurns) {
+        debugLog(`${scene.name} 完了（${turnCount}ターン）`);
+        const nextBtn = document.getElementById("btn-next-scene");
+        nextBtn.style.display = "block";
+        nextBtn.textContent = currentSceneIndex < scenes.length - 1 ? t("btn_next_scene") : t("btn_see_result");
+        setStatus("", t("scene_complete"));
+        document.getElementById("ptt-btn").classList.remove("show");
+        document.getElementById("action-hint").textContent = "";
+        updateTurnIndicator(turnCount, scene.maxTurns || 3);
+        // 場面完了: ポジティブな表情に切り替え
+        const doneMap = { scene1_self_intro: "impressed", scene2_instruction: "approval", scene3_trouble: "understanding", scene4_customer: "satisfied" };
+        setCharExpression(scene.key, doneMap[scene.key] || "default");
+      }
+      break;
+
+    case "rate_limits.updated":
+      debugLog(`[rate_limits.updated]`);
+      break;
+
+    case "error":
+      debugLog(`エラー: ${JSON.stringify(data.error)}`);
+      showError(data.error?.message || "通信エラーが発生しました");
+      break;
+
+    default:
+      if (data.type && !data.type.includes("delta") && !data.type.includes("buffer")) {
+        debugLog(`[${data.type}]`);
+      }
+  }
+}
+
+// ===================================================
+// 場面遷移（演出付き）
+// ===================================================
+async function nextScene() {
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+
+  const prevScene = scenes[currentSceneIndex];
+  turnCount = 0;
+  currentSceneIndex++;
+
+  if (currentSceneIndex >= scenes.length) {
+    await runEvaluation();
+  } else {
+    // 場面遷移演出
+    const stEl = document.getElementById("scene-transition");
+    const nextSceneObj = scenes[currentSceneIndex];
+    document.getElementById("st-text").textContent = t("transition_done", { scene: prevScene.name });
+    document.getElementById("st-next").textContent = t("transition_next", { next: nextSceneObj.name });
+    stEl.classList.add("show");
+    await new Promise(r => setTimeout(r, 1500));
+    stEl.classList.remove("show");
+    await startScene();
+  }
+}
+
+// ===================================================
+// Claude評価（評価ステップ演出付き）
+// ===================================================
+async function runEvaluation() {
+  showScreen("evaluating");
+  startEvalStepAnimation();
+
+  let fullTranscript = "";
+  for (const sceneObj of scenes) {
+    fullTranscript += `\n## ${sceneObj.name}\n`;
+    const lines = transcripts[sceneObj.key] || [];
+    for (const line of lines) {
+      fullTranscript += `${line.role === "ai" ? "AI" : "受験者"}: ${line.text}\n`;
+    }
+  }
+
+  try {
+    const res = await fetch("/api/evaluate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript: fullTranscript }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      alert("評価に失敗しました: " + (err.error || "不明なエラー"));
+      showScreen("start");
+      return;
+    }
+    const { evaluation } = await res.json();
+    showResults(evaluation);
+  } catch (err) {
+    alert("評価エラー: " + err.message);
+    showScreen("start");
+  }
+}
+
+// 評価ステップアニメーション
+function startEvalStepAnimation() {
+  const steps = document.querySelectorAll(".eval-step");
+  let current = 0;
+  const interval = setInterval(() => {
+    if (current > 0) {
+      steps[current - 1].classList.remove("active");
+      steps[current - 1].classList.add("done");
+      steps[current - 1].querySelector(".eval-step-dot").textContent = "✓";
+    }
+    if (current < steps.length) {
+      steps[current].classList.add("active");
+      current++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 5000);
+  // 最初のステップはすでにactiveなのでcurrent=1から進行
+  steps[0].classList.add("active");
+  setTimeout(() => {
+    steps[0].classList.remove("active");
+    steps[0].classList.add("done");
+    steps[0].querySelector(".eval-step-dot").textContent = "✓";
+    if (steps[1]) steps[1].classList.add("active");
+  }, 5000);
+}
+
+// ===================================================
+// 結果表示（ゲーミフィケーション演出付き）
+// ===================================================
+function showResults(ev) {
+  showScreen("results");
+
+  // 称号を大きく表示
+  const rankTitle = ev.rank_title_ja || "";
+  document.getElementById("result-rank-title").textContent = rankTitle;
+
+  // スコアカウントアップアニメーション
+  const scoreEl = document.getElementById("result-score");
+  animateCounter(scoreEl, 0, ev.overall_score, 1200);
+
+  document.getElementById("result-jlpt").textContent = `JLPT ${ev.jlpt_equivalent} 相当`;
+
+  const sceneNames = {
+    self_intro: "自己紹介",
+    instruction: "業務指示",
+    trouble_report: "トラブル報告",
+    customer_service: "お客様対応"
+  };
+  document.getElementById("scene-results").innerHTML = (ev.scenes || []).map(s => `
+    <div class="scene-result">
+      <span class="name">${sceneNames[s.scene_type] || s.scene_type}</span>
+      <span class="score">${s.scene_score}</span>
+    </div>
+  `).join("");
+
+  const axisNames = { vocabulary: "語彙", grammar: "文法", keigo: "敬語", communication: "伝達", adaptability: "適応" };
+  const avgAxes = {};
+  for (const axis of Object.keys(axisNames)) {
+    const scores = (ev.scenes || []).map(s => s[`${axis}_score`] || 0);
+    avgAxes[axis] = scores.reduce((a, b) => a + b, 0) / Math.max(scores.length, 1);
+  }
+  document.getElementById("axis-bars").innerHTML = Object.entries(axisNames).map(([key, name]) => {
+    const val = avgAxes[key] || 0;
+    const pct = Math.round((val / 5) * 100);
+    return `
+      <div class="axis-bar">
+        <span class="label">${name}</span>
+        <div class="bar"><div class="fill" data-pct="${pct}" style="width:0"></div></div>
+        <span class="val">${val.toFixed(1)}</span>
+      </div>
+    `;
+  }).join("");
+
+  // バーアニメーション開始
+  requestAnimationFrame(() => {
+    document.querySelectorAll(".axis-bar .fill").forEach(fill => {
+      fill.style.width = fill.dataset.pct + "%";
+    });
+  });
+
+  document.getElementById("result-comment").textContent = ev.overall_comment_ja || "";
+}
+
+// カウントアップアニメーション
+function animateCounter(el, start, end, duration) {
+  const startTime = performance.now();
+  function update(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(start + (end - start) * eased);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ===================================================
+// エラー復帰
+// ===================================================
+function showError(msg) {
+  document.getElementById("error-msg").textContent = msg || t("error_msg");
+  document.getElementById("error-overlay").classList.add("show");
+}
+
+function retryConnection() {
+  document.getElementById("error-overlay").classList.remove("show");
+  if (scenes.length > 0 && currentSceneIndex < scenes.length) {
+    startScene();
+  }
+}
+
+// ===================================================
+// 中断確認
+// ===================================================
+function confirmQuit() {
+  document.getElementById("quit-confirm").classList.add("show");
+}
+
+function closeQuitConfirm() {
+  document.getElementById("quit-confirm").classList.remove("show");
+}
+
+function quitAssessment() {
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  document.getElementById("quit-confirm").classList.remove("show");
+  document.getElementById("error-overlay").classList.remove("show");
+  showScreen("start");
+}
+
+// ===================================================
+// シェア
+// ===================================================
+function shareResult() {
+  const url = window.location.href;
+  if (navigator.share) {
+    navigator.share({ title: t("start_title"), text: t("start_title"), url });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      const toast = document.getElementById("share-toast");
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2000);
+    });
+  }
+}
+
+// 登録導線（Phase 1 プレースホルダー）
+function showRegister() {
+  alert("この機能はまもなく利用可能になります。");
+}
+
+// ===================================================
+// デバッグトグル（Ctrl+Shift+D）
+// ===================================================
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key === "D") {
+    document.getElementById("debug-log").classList.toggle("visible");
+  }
+});
+</script>
+</body>
+</html>
