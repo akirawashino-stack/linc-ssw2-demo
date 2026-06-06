@@ -885,10 +885,10 @@ var DB=[
 var VK=['eisei','tenpo','sekkyaku','chouri'];
 var VOCAB=DB.filter(function(d){return VK.indexOf(d.category)>-1 && d.term;});
 var CAT={
- eisei:{name:'衛生管理', en:'Hygiene', ic:'🧼', h:'green'},
- tenpo:{name:'店舗運営', en:'Store', ic:'📊', h:'indigo'},
- sekkyaku:{name:'接客', en:'Service', ic:'🙂', h:'persimmon'},
- chouri:{name:'調理', en:'Cooking', ic:'🍳', h:'amber'}
+ eisei:{name:'衛生管理', read:'えいせいかんり', en:'Hygiene', ic:'🧼', h:'green'},
+ tenpo:{name:'店舗運営', read:'てんぽうんえい', en:'Store', ic:'📊', h:'indigo'},
+ sekkyaku:{name:'接客', read:'せっきゃく', en:'Service', ic:'🙂', h:'persimmon'},
+ chouri:{name:'調理', read:'ちょうり', en:'Cooking', ic:'🍳', h:'amber'}
 };
 var HUE={green:'#2E9E7E',indigo:'#3E6FB0',persimmon:'#E8743B',amber:'#D98A2B'};
 var S={furigana:true, honban:false, idx:0, order:[], flip:false, screen:'home', cat:null, quiz:null, drill:null, guideFocus:null, situ:null};
@@ -925,11 +925,15 @@ var app=document.getElementById('app');
 function setF(v){S.furigana=v; document.body.classList.toggle('hide-furigana',!v);}
 function setHonban(v){S.honban=v; S.furigana=!v; document.body.classList.toggle('hide-furigana',v); render();}
 function hueBg(h){return {green:'#E2F3ED',indigo:'#E6EEF8',persimmon:'#FBE7DA',amber:'#F8EBD6'}[h];}
+function rb(t,r){return '<ruby>'+t+'<rt>'+r+'</rt></ruby>';}
+function catLabel(c){var m=CAT[c]; return m&&m.read?rb(m.name,m.read):(m?m.name:c);}
+function hasKR(t){return /[\u3400-\u9fff\uf900-\ufaffA-Za-z]/.test(t);}
+function termLabel(d){return hasKR(d.term)&&d.reading?rb(d.term,d.reading):d.term;}
 function fheader(){
  var right = S.honban
    ? '<button class="fbtn honban" onclick="setHonban(false)">📝 本番モード</button>'
    : '<button class="fbtn '+(S.furigana?'on':'')+'" onclick="setF(!S.furigana);render()"><span class="dot"></span>ふりがな</button>';
- return '<div class="hd"><div class="brand"><span class="mk">語</span><div><b>外食ことば</b><span>SSW2 ことば練習</span></div></div>'+right+'</div>';
+ return '<div class="hd"><div class="brand"><span class="mk">語</span><div><b>'+rb('外食','がいしょく')+'ことば</b><span>SSW2 ことば'+rb('練習','れんしゅう')+'</span></div></div>'+right+'</div>';
 }
 function render(){
  document.body.classList.toggle('hide-furigana',!S.furigana);
@@ -952,7 +956,7 @@ function home(){
  var cards=VK.map(function(c,i){var m=CAT[c];var n=listOf(c).length;
   return '<button class="cat" data-h="'+m.h+'" style="animation-delay:'+(i*60)+'ms" onclick="S.cat=\''+c+'\';S.screen=\'cat\';render()">'+
    '<div class="n">'+n+'<small>語</small></div>'+
-   '<div class="ic">'+m.ic+'</div><h3>'+m.name+'</h3><div class="en">'+m.en+'</div>'+
+   '<div class="ic">'+m.ic+'</div><h3>'+catLabel(c)+'</h3><div class="en">'+m.en+'</div>'+
    '<div class="bar"><i></i></div></button>';
  }).join('');
  app.innerHTML=fheader()+
@@ -971,11 +975,11 @@ function home(){
 }
 function catScreen(){
  var c=S.cat, m=CAT[c], items=listOf(c);
- var peek=items.slice(0,8).map(function(d){return '<div class="term-row"><b>'+d.term+'</b><span>'+strip(d.meaning)+'</span></div>';}).join('');
+ var peek=items.slice(0,8).map(function(d){return '<div class="term-row"><b>'+termLabel(d)+'</b><span>'+strip(d.meaning)+'</span></div>';}).join('');
  app.innerHTML=fheader()+
   '<button class="back" onclick="S.screen=\'home\';render()">‹ ぶんや いちらん</button>'+
   '<div class="chead"><div class="ic" style="background:'+hueBg(m.h)+';color:'+HUE[m.h]+'">'+m.ic+'</div>'+
-   '<div><h2>'+m.name+'</h2><div class="en">'+m.en+' ・ '+items.length+'語</div></div></div>'+
+   '<div><h2>'+catLabel(c)+'</h2><div class="en">'+m.en+' ・ '+items.length+'語</div></div></div>'+
   '<button class="btn p" onclick="startStudy(\''+c+'\')">📖 カードで 学習する</button>'+
   '<button class="btn g row" onclick="startQuiz(\''+c+'\')">🎯 クイズで ためす</button>'+
   '<div class="peek"><div class="sec-l">この ぶんやの ことば（れい）</div>'+peek+'</div>';
@@ -984,7 +988,7 @@ function startStudy(c){S.cat=c; S.order=listOf(c); S.idx=0; S.flip=false; S.scre
 function studyScreen(){
  var d=S.order[S.idx], m=CAT[d.category], pct=Math.round((S.idx+1)/S.order.length*100);
  app.innerHTML=fheader()+
-  '<button class="back" onclick="S.screen=\'cat\';S.cat=d.category;render()">‹ '+m.name+'</button>'+
+  '<button class="back" onclick="S.screen=\'cat\';S.cat=\''+d.category+'\';render()">‹ '+catLabel(d.category)+'</button>'+
   '<div class="prog"><i style="width:'+pct+'%"></i></div>'+
   '<div class="count">'+(S.idx+1)+' / '+S.order.length+'</div>'+
   '<div class="scene"><div class="fcard2'+(S.flip?'':' isfront')+'" id="fc" onclick="flip()">'+
@@ -992,8 +996,8 @@ function studyScreen(){
       ? '<div class="lab">いみ</div><div class="mean">'+d.meaning+'</div>'+
         '<div class="lab">れいぶん</div><div class="ex">'+d.example+'</div>'+
         '<div class="src"><b>出典</b> '+d.source+'</div>'
-      : '<span class="tag" style="background:'+HUE[m.h]+'">'+m.name+'</span>'+
-        '<div class="word">'+d.term+'</div><div class="hint">タップして いみを みる ↻</div>'
+      : '<span class="tag" style="background:'+HUE[m.h]+'">'+catLabel(d.category)+'</span>'+
+        '<div class="word">'+termLabel(d)+'</div><div class="hint">タップして いみを みる ↻</div>'
     )+
   '</div></div>'+
   '<div class="nav"><button onclick="step(-1)" '+(S.idx===0?'disabled':'')+'>‹ まえ</button>'+
@@ -1044,7 +1048,7 @@ function nextQ(){var q=S.quiz; if(q.i===q.qs.length-1){endSession(P.quiz); S.scr
 function resultScreen(){
  var q=S.quiz, pct=Math.round(q.score/q.qs.length*100), pass=pct>=65;
  var R=70, C=2*Math.PI*R, off=C*(1-pct/100);
- var wrong=q.wrong.map(function(d){return '<div class="term-row"><b>'+d.term+'</b><span>'+strip(d.meaning)+'</span></div>';}).join('');
+ var wrong=q.wrong.map(function(d){return '<div class="term-row"><b>'+termLabel(d)+'</b><span>'+strip(d.meaning)+'</span></div>';}).join('');
  app.innerHTML=fheader()+
   '<div class="res"><div class="ring"><svg width="168" height="168">'+
     '<circle cx="84" cy="84" r="'+R+'" fill="none" stroke="#EFE6D4" stroke-width="14"/>'+
@@ -1417,7 +1421,7 @@ function recordsScreen(){
     '<div class="statcard"><div class="big">'+streakDays()+'<small>日 れんぞく</small></div><div class="bigsub">のべ '+P.days.length+'日 ・ もんだい のべ '+totalQ+'もん</div></div>'+
     '<div class="sec-l">ことばの 定着</div>'+
     '<div class="statcard"><div class="big">'+learned+' / 151<small>語 おぼえた</small></div><div class="bigsub">出会った語 '+seen+' ・ クイズ正答率 '+pctOf(P.quiz)+'%</div></div>'+
-    '<div class="sec-l">分野別の 正答率（語彙クイズ）</div>'+statRows(P.quiz.by,function(k){return CAT[k]?CAT[k].name:k;})+
+    '<div class="sec-l">分野別の 正答率（語彙クイズ）</div>'+statRows(P.quiz.by,function(k){return CAT[k]?catLabel(k):k;})+
     '<div class="sec-l">状況判断（分野別）</div>'+statRows(P.situ.by,function(k){return k;})+
     '<div class="sec-l">計算ドリル（公式別）</div>'+statRows(P.drill.by,function(k){return FMAP[k]?strip(FMAP[k].name):k;})+
     '<div class="note" style="margin-top:12px"><b>赤い行</b>は 正答率 65%みまんの にがてな ところです。<br>この きろくは この 端末に ほぞんされ、ログインは いりません。</div>';
