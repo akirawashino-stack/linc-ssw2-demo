@@ -170,6 +170,9 @@ footer{position:fixed; left:0; right:0; bottom:0; text-align:center; font-size:1
 .calcbtn b{font-family:var(--disp); font-weight:900; font-size:16.5px; display:block}
 .calcbtn small{font-size:11.5px; opacity:.85; display:block; margin-top:1px}
 .calcbtn .arr{margin-left:auto; font-size:22px; opacity:.85}
+.allbtn.fill{color:#fff; border:none; box-shadow:var(--sh)}
+.allbtn.fill ruby>rt:not(.ez){color:#fff; opacity:.95; font-size:.62em}
+.calcbtn b ruby>rt:not(.ez){font-size:.6em}
 .fcard-list{display:flex; flex-direction:column; gap:11px}
 .fc{position:relative; text-align:left; cursor:pointer; border:1.5px solid var(--line); background:var(--card); border-radius:var(--r); padding:15px 16px; box-shadow:var(--sh-s); transition:transform .14s, box-shadow .2s, border-color .2s; animation:up .45s both; font-family:var(--body); display:flex; align-items:center; gap:13px}
 .fc:active{transform:scale(.98)} .fc:hover{box-shadow:var(--sh); border-color:var(--indigo)}
@@ -997,12 +1000,82 @@ function fheader(){
  var right = '';
  return '<div class="hd"><div class="brand"><span class="mk">語</span><div><b>特定技能2号 外食業</b><span>試験対策 ・ 外食ことば</span></div></div>'+right+'</div>';
 }
+/* ===== 分野テスト：その分野の用語(4択・ひっかけ・マスク)＋状況判断(実技) を1本に。学習スタイル（1問ごとに正誤＋解説）・合格65% ===== */
+var SITUCAT={eisei:'衛生',tenpo:'店舗',sekkyaku:'接客',chouri:'調理'};
+function startCatTest(cat, mode){
+ var vp=shuffle(listOf(cat));
+ var sp=shuffle(SITU.filter(function(x){return x.cat===SITUCAT[cat];}));
+ var vN, sN;
+ if(mode==='all'){ vN=vp.length; sN=sp.length; }
+ else { vN=Math.min(15,vp.length); sN=Math.min(5,sp.length); }
+ var items=[];
+ vp.slice(0,vN).forEach(function(d){ items.push({type:'vocab', d:d, dir:(Math.random()<0.5?'m':'t'), opts:fmOpts(d)}); });
+ sp.slice(0,sN).forEach(function(it){ items.push({type:'situ', it:it}); });
+ items=shuffle(items);
+ S.ct={cat:cat, mode:mode, items:items, i:0, score:0, wrong:[], answered:false, picked:null};
+ S.screen='ctest'; render();
+}
+function ctestAnswer(idx){
+ var t=S.ct; if(t.answered) return; var it=t.items[t.i];
+ t.picked=idx; t.answered=true;
+ var correct = it.type==='vocab' ? (it.opts[idx].id===it.d.id) : (idx===it.it.ans);
+ if(correct) t.score++; else t.wrong.push(it);
+ ctestScreen();
+}
+function ctestNext(){ var t=S.ct; if(t.i===t.items.length-1){ S.screen='ctestResult'; render(); return; } t.i++; t.answered=false; t.picked=null; ctestScreen(); }
+function ctestScreen(){
+ var t=S.ct, it=t.items[t.i], pct=Math.round(t.i/t.items.length*100);
+ var head='<div class="count"><ruby>問題<rt class=ez>もんだい</rt></ruby> '+(t.i+1)+' / '+t.items.length+'　・<ruby>正解<rt>せいかい</rt></ruby> '+t.score+'</div>';
+ var body;
+ if(it.type==='vocab'){
+   var d=it.d, dir=it.dir;
+   var qk=dir==='m'?'この<ruby>言葉<rt>ことば</rt></ruby>の<ruby>意味<rt class=ez>いみ</rt></ruby>は？':'この<ruby>意味<rt class=ez>いみ</rt></ruby>の<ruby>言葉<rt>ことば</rt></ruby>は？';
+   var stem=dir==='m'?'<div class="qt">'+d.term+'</div>':'<div class="qt sm">'+maskTerm(d.meaning,d.term)+'</div>';
+   var opts=it.opts.map(function(o,idx){ var label=dir==='m'?maskTerm(o.meaning,d.term):o.term; var cls='opt';
+     if(t.answered){ if(o.id===d.id)cls+=' correct'; else if(idx===t.picked)cls+=' wrong'; else cls+=' dim'; }
+     return '<button class="'+cls+'" '+(t.answered?'disabled':'')+' onclick="ctestAnswer('+idx+')">'+label+'</button>';
+   }).join('');
+   body='<div class="qk">'+qk+'</div>'+stem+'<div class="opts">'+opts+'</div>';
+ } else {
+   var iq=it.it;
+   var opts=iq.choices.map(function(c,idx){ var cls='opt';
+     if(t.answered){ if(idx===iq.ans)cls+=' correct'; else if(idx===t.picked)cls+=' wrong'; else cls+=' dim'; }
+     return '<button class="'+cls+'" '+(t.answered?'disabled':'')+' onclick="ctestAnswer('+idx+')">'+c+'</button>';
+   }).join('');
+   var exp = t.answered? ('<div class="situexp"><div class="l">かいせつ</div>'+iq.exp+'<div class="esrc"><b>出典</b> '+iq.src+'</div></div>') : '';
+   body='<div class="qk">'+iq.cat+'の<ruby>場面<rt>ばめん</rt></ruby>（<ruby>実技<rt>じつぎ</rt></ruby>）</div><div class="qt sm">'+iq.scene+'</div><div class="qq" style="margin-top:12px">'+iq.q+'</div><div class="opts">'+opts+'</div>'+exp;
+ }
+ var foot=t.answered?'<button class="btn p" onclick="ctestNext()">'+(t.i===t.items.length-1?'<ruby>結果<rt>けっか</rt></ruby>を<ruby>見<rt class=ez>み</rt></ruby>る':'<ruby>次<rt class=ez>つぎ</rt></ruby>の<ruby>問題<rt class=ez>もんだい</rt></ruby> ›')+'</button>':'';
+ app.innerHTML=fheader()+
+  '<button class="back" onclick="if(confirm(\'テストをやめますか？\')){S.screen=\'cat\';render()}">‹ '+CAT[t.cat].name+'</button>'+
+  '<div class="prog"><i style="width:'+pct+'%"></i></div>'+head+
+  '<div class="q-card">'+body+'<div class="q-foot">'+foot+'</div></div>';
+}
+function ctestResultScreen(){
+ var t=S.ct, pct=Math.round(t.score/t.items.length*100), pass=pct>=65;
+ var R=70, C=2*Math.PI*R, off=C*(1-pct/100);
+ var wrong=t.wrong.map(function(it){ return '<div class="term-row">'+(it.type==='vocab'
+   ? ('<b>'+it.d.term+'</b><span>'+strip(it.d.meaning)+'</span>')
+   : ('<b>'+it.it.cat+'（実技）：'+strip(it.it.q)+'</b><span>'+strip(it.it.exp)+'</span>'))+'</div>'; }).join('');
+ app.innerHTML=fheader()+
+  '<div class="res"><div class="ring"><svg width="168" height="168">'+
+   '<circle cx="84" cy="84" r="'+R+'" fill="none" stroke="#EFE6D4" stroke-width="14"/>'+
+   '<circle cx="84" cy="84" r="'+R+'" fill="none" stroke="'+(pass?'#2E9E7E':'#E8743B')+'" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+off+'"/>'+
+   '</svg><div class="num"><b>'+pct+'<span style="font-size:22px">%</span></b><span>'+t.score+' / '+t.items.length+'</span></div></div>'+
+  '<div class="verdict '+(pass?'pass':'fail')+'">'+(pass?'合格ラインクリア！🎉':'もう<ruby>一息<rt class=ez>ひといき</rt></ruby>！')+'</div>'+
+  '<div class="sub">'+CAT[t.cat].name+'の<ruby>分野<rt class=ez>ぶんや</rt></ruby>テスト（<ruby>用語<rt>ようご</rt></ruby>＋<ruby>実技<rt>じつぎ</rt></ruby>）・<ruby>合格<rt>ごうかく</rt></ruby>の<ruby>目安<rt class=ez>めやす</rt></ruby>は65%</div></div>'+
+  (t.wrong.length?'<div class="peek"><div class="sec-l">まちがえた<ruby>問題<rt class=ez>もんだい</rt></ruby></div>'+wrong+'</div>':'')+
+  '<button class="btn p" style="margin-top:22px" onclick="startCatTest(\''+t.cat+'\',\''+t.mode+'\')">🔁 もういちど</button>'+
+  '<button class="btn g row" onclick="S.screen=\'cat\';render()">‹ '+CAT[t.cat].name+'へ</button>';
+}
 function render(){
  document.body.classList.toggle('hide-furigana',!S.furigana);
  document.body.classList.toggle('show-ez',!!S.beginner&&!S.honban);
  window.scrollTo(0,0);
  if(S.screen==='study') return studyScreen();
  if(S.screen==='cat') return catScreen();
+ if(S.screen==='ctest') return ctestScreen();
+ if(S.screen==='ctestResult') return ctestResultScreen();
  if(S.screen==='quiz') return quizScreen();
  if(S.screen==='fmock') return fmockScreen();
  if(S.screen==='fmockResult') return fmockResultScreen();
@@ -1269,13 +1342,13 @@ function home(){
    '</div></div>'+
   '<div class="sec-l"><ruby>分野<rt class=ez>ぶんや</rt></ruby>をえらぶ</div><div class="grid">'+cards+'</div>'+
   '<button class="allbtn" onclick="startQuiz(null,10)">🎯 ぜんぶからクイズ（10もん・腕だめし）</button>'+
-  '<button class="allbtn" style="background:linear-gradient(135deg,var(--indigo),#2b5388);margin-top:11px" onclick="startMock()">📝 <ruby>本番<rt>ほんばん</rt></ruby>けいしきの<ruby>模試<rt>もし</rt></ruby>（<ruby>学科<rt class=ez>がっか</rt></ruby>35もん・<ruby>合格<rt>ごうかく</rt></ruby>65%）</button>'+
-  '<button class="allbtn" style="background:linear-gradient(135deg,#2b5388,#1f3e5c);margin-top:11px" onclick="startFullMock()">📋 <ruby>本番<rt>ほんばん</rt></ruby><ruby>通<rt>とお</rt></ruby>し<ruby>模試<rt>もし</rt></ruby>（<ruby>学科<rt class=ez>がっか</rt></ruby>35＋<ruby>実技<rt>じつぎ</rt></ruby>20＝55もん）</button>'+
+  '<button class="allbtn fill" style="background:linear-gradient(135deg,#22436b,#152d4d);margin-top:11px" onclick="startMock()">📝 <ruby>本番<rt>ほんばん</rt></ruby>けいしきの<ruby>模試<rt>もし</rt></ruby>（<ruby>学科<rt class=ez>がっか</rt></ruby>35もん・<ruby>合格<rt>ごうかく</rt></ruby>65%）</button>'+
+  '<button class="allbtn fill" style="background:linear-gradient(135deg,#22436b,#152d4d);margin-top:11px" onclick="startFullMock()">📋 <ruby>本番<rt>ほんばん</rt></ruby><ruby>通<rt>とお</rt></ruby>し<ruby>模試<rt>もし</rt></ruby>（<ruby>学科<rt class=ez>がっか</rt></ruby>35＋<ruby>実技<rt>じつぎ</rt></ruby>20＝55もん）</button>'+
   '<div class="sec-l"><ruby>特集<rt>とくしゅう</rt></ruby>—にがてを<ruby>集中<rt class=ez>しゅうちゅう</rt></ruby></div>'+
-  '<button class="calcbtn" style="background:linear-gradient(135deg,var(--indigo),#2b5388)" onclick="S.screen=\'focusHome\';render()"><span>🎯</span><div><b><ruby>特集<rt>とくしゅう</rt></ruby>モード</b><small>菌・経理・まちがえやすい言葉を集中して学ぶ</small></div><span class="arr">›</span></button>'+
+  '<button class="calcbtn" style="background:linear-gradient(135deg,var(--persimmon),var(--persimmon-d))" onclick="S.screen=\'focusHome\';render()"><span>🎯</span><div><b><ruby>特集<rt>とくしゅう</rt></ruby>モード</b><small>菌・経理・まちがえやすい言葉を集中して学ぶ</small></div><span class="arr">›</span></button>'+
   '<div class="sec-l">じつぎ（実技）の<ruby>練習<rt class=ez>れんしゅう</rt></ruby></div>'+
-  '<button class="calcbtn" onclick="S.screen=\'keisan\';render()"><span>🧮</span><div><b>計算ドリル</b><small>店舗運営の計数を自分で計算する</small></div><span class="arr">›</span></button>'+
-  '<button class="calcbtn" style="margin-top:11px; background:linear-gradient(135deg,var(--green),#1f7d62)" onclick="S.screen=\'situHome\';render()"><span>🧭</span><div><b>状況判断</b><small>「この場面でどうする？」を4択で</small></div><span class="arr">›</span></button>'+
+  '<button class="calcbtn" style="background:linear-gradient(135deg,var(--green),#1F6E56)" onclick="S.screen=\'keisan\';render()"><span>🧮</span><div><b>計算ドリル</b><small>店舗運営の計数を自分で計算する</small></div><span class="arr">›</span></button>'+
+  '<button class="calcbtn" style="margin-top:11px; background:linear-gradient(135deg,var(--green),#1F6E56)" onclick="S.screen=\'situHome\';render()"><span>🧭</span><div><b>状況判断</b><small>「この場面でどうする？」を4択で</small></div><span class="arr">›</span></button>'+
   '<button class="btn g" style="margin-top:16px" onclick="S.screen=\'records\';render()">📊 学習の<ruby>記録<rt>きろく</rt></ruby>を<ruby>見<rt class=ez>み</rt></ruby>る</button>';
 }
 function catScreen(){
@@ -1288,7 +1361,7 @@ function catScreen(){
   '<div class="chead"><div class="ic" style="background:'+hueBg(m.h)+';color:'+HUE[m.h]+'">'+m.ic+'</div>'+
    '<div><h2>'+m.name+'</h2><div class="en">'+m.en+' ・ '+items.length+'語</div></div></div>'+
   '<button class="btn p" onclick="startStudy(\''+c+'\')">📖 カードで学習する</button>'+
-  '<button class="btn g row" onclick="startQuiz(\''+c+'\')">🎯 クイズで<ruby>試<rt>ため</rt></ruby>す</button>'+
+  '<button class="btn g row" onclick="startCatTest(\''+c+'\',\'sample\')">📝 <ruby>分野<rt class=ez>ぶんや</rt></ruby>テスト（<ruby>用語<rt>ようご</rt></ruby>＋<ruby>実技<rt>じつぎ</rt></ruby>・<ruby>約<rt>やく</rt></ruby>20もん）</button>'+'<button class="btn g row" onclick="startCatTest(\''+c+'\',\'all\')">📚 ぜんぶテスト（'+items.length+'<ruby>語<rt class=ez>ご</rt></ruby>＋<ruby>実技<rt>じつぎ</rt></ruby>まるごと）</button>'+
   (dcount>0
     ? '<div class="peek"><div class="idx-cap">📖 くわしい<ruby>解説<rt>かいせつ</rt></ruby>つき：'+dcount+'<ruby>語<rt class=ez>ご</rt></ruby> ・ タップで<ruby>解説<rt>かいせつ</rt></ruby>へ</div>'+idxList+'</div>'
     : '<div class="peek"><div class="sec-l">この<ruby>分野<rt class=ez>ぶんや</rt></ruby>の<ruby>言葉<rt>ことば</rt></ruby>（れい）</div>'+peek+'</div>');
